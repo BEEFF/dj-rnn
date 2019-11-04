@@ -1,0 +1,67 @@
+
+import time
+import sys
+import spotipy
+from spotipy.oauth2 import SpotifyClientCredentials
+
+LIMIT = 100
+
+client_credentials_manager = SpotifyClientCredentials(client_id='a345a7b145164b0ca2d9db0b320b533d', client_secret='db220f89950449119ed71ece4682b2be')
+sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
+
+
+def get_artist(name):
+    results = sp.search(q='artist:' + name, type='artist')
+    items = results['artists']['items']
+    if len(items) > 0:
+        return items[0]
+    else:
+        return None
+
+def show_recommendations_for_artist(artist, artists):
+    albums = []
+    try:
+        results = sp.recommendations(seed_artists = [artist['id']], limit=LIMIT)
+    except:
+        results = []
+    if not results:
+        return None
+    for track in results['tracks']:
+        selecta = track['artists'][0]['name']
+        artists.append(selecta)
+    return artists
+
+def recurse(artist):
+    artists = []
+    limit = 10
+    count = 0
+    new_set = set([])
+    artists = show_recommendations_for_artist(artist, artists)
+    for a in artists:
+        print("Getting artists related to {0}".format(a))
+        recs = show_recommendations_for_artist(get_artist(a), [])
+        print(recs)
+        art_set = set(recs)
+        new_set = new_set.union(art_set)
+    print("NEW SET")
+    print(new_set)
+    print("---------")
+    return list(new_set)
+
+def to_file(data):
+with open('your_file.txt', 'w') as f:
+    for item in my_list:
+        f.write("%s\n" % item)
+
+
+
+if __name__ == '__main__':
+    if len(sys.argv) < 2:
+        print(('Usage: {0} artist name'.format(sys.argv[0])))
+    else:
+        name = ' '.join(sys.argv[1:])
+        artist = get_artist(name)
+        if artist:
+            print(recurse(artist))
+        else:
+            print("Can't find that artist", name)
